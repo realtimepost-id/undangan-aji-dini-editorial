@@ -60,18 +60,152 @@
   links.forEach(a => { const s = $(a.getAttribute('href')); s && so.observe(s); });
   addEventListener('scroll', () => { const h = document.documentElement; $('#progress').style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100 || 0) + '%'; }, { passive: true });
 
-  /* Kelopak */
-  for (let i = 0; i < 12; i++) { const p = document.createElement('i'); p.className = 'petal'; const s = 7 + Math.random() * 9;
-    Object.assign(p.style, { left: Math.random() * 100 + '%', width: s + 'px', height: s + 'px', animationDuration: 7 + Math.random() * 7 + 's', animationDelay: Math.random() * 7 + 's' }); $('#petals').appendChild(p); }
+  /* Kelopak — aman jika elemen dekorasi tidak tersedia */
+const petalsRoot = $('#petals');
 
-  /* Lightbox */
-  const imgs = $$('.bento img'), lb = $('#lb'), lbImg = $('#lbImg'); let idx = 0;
-  const show = i => { idx = (i + imgs.length) % imgs.length; lbImg.src = imgs[idx].src; lb.hidden = false; };
-  imgs.forEach((im, i) => im.parentElement.onclick = () => show(i));
-  $('.lb-x').onclick = () => lb.hidden = true; $('.prev').onclick = () => show(idx - 1); $('.next').onclick = () => show(idx + 1);
-  lb.onclick = e => { if (e.target === lb) lb.hidden = true; };
-  document.addEventListener('keydown', e => { if (lb.hidden) return; if (e.key === 'Escape') lb.hidden = true; if (e.key === 'ArrowLeft') show(idx - 1); if (e.key === 'ArrowRight') show(idx + 1); });
-  let sx = 0; lb.addEventListener('touchstart', e => sx = e.touches[0].clientX); lb.addEventListener('touchend', e => { const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 50) show(idx + (dx < 0 ? 1 : -1)); });
+if (petalsRoot) {
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('i');
+    p.className = 'petal';
+    const s = 7 + Math.random() * 9;
+
+    Object.assign(p.style, {
+      left: Math.random() * 100 + '%',
+      width: s + 'px',
+      height: s + 'px',
+      animationDuration: 7 + Math.random() * 7 + 's',
+      animationDelay: Math.random() * 7 + 's'
+    });
+
+    petalsRoot.appendChild(p);
+  }
+}
+
+/* Lightbox + Zoom */
+const imgs = $$('.bento figure img');
+const lb = $('#lb');
+const lbImg = $('#lbImg');
+
+let idx = 0;
+let zoom = 1;
+let touchStartX = 0;
+let pinchStartDistance = 0;
+let pinchStartZoom = 1;
+let isPinching = false;
+
+const setZoom = value => {
+  zoom = Math.min(4, Math.max(1, value));
+  lbImg.style.transform = `scale(${zoom})`;
+  lbImg.style.cursor = zoom > 1 ? 'zoom-out' : 'zoom-in';
+};
+
+const show = i => {
+  if (!imgs.length) return;
+
+  idx = (i + imgs.length) % imgs.length;
+  lbImg.src = imgs[idx].src;
+  lbImg.alt = imgs[idx].alt || 'Foto Aji dan Dini';
+  lb.hidden = false;
+  setZoom(1);
+};
+
+const closeLightbox = () => {
+  lb.hidden = true;
+  setZoom(1);
+};
+
+imgs.forEach((im, i) => {
+  im.parentElement.addEventListener('click', () => show(i));
+});
+
+/* Tombol zoom dibuat otomatis */
+const zoomControls = document.createElement('div');
+zoomControls.className = 'lb-zoom-controls';
+zoomControls.innerHTML = `
+  <button type="button" class="lb-zoom-out" aria-label="Perkecil foto">−</button>
+  <button type="button" class="lb-zoom-reset" aria-label="Reset zoom">↺</button>
+  <button type="button" class="lb-zoom-in" aria-label="Perbesar foto">+</button>
+`;
+lb.appendChild(zoomControls);
+
+zoomControls.querySelector('.lb-zoom-in').onclick = () => setZoom(zoom + 0.5);
+zoomControls.querySelector('.lb-zoom-out').onclick = () => setZoom(zoom - 0.5);
+zoomControls.querySelector('.lb-zoom-reset').onclick = () => setZoom(1);
+
+/* Tutup dan navigasi foto */
+$('.lb-x').onclick = closeLightbox;
+$('.prev').onclick = () => show(idx - 1);
+$('.next').onclick = () => show(idx + 1);
+
+lb.onclick = e => {
+  if (e.target === lb) closeLightbox();
+};
+
+/* Zoom dengan klik dua kali */
+lbImg.addEventListener('dblclick', () => {
+  setZoom(zoom > 1 ? 1 : 2);
+});
+
+/* Zoom dengan scroll mouse / trackpad */
+lb.addEventListener('wheel', e => {
+  if (lb.hidden) return;
+
+  e.preventDefault();
+  setZoom(zoom + (e.deltaY < 0 ? 0.2 : -0.2));
+}, { passive: false });
+
+/* Zoom dengan pinch dua jari dan swipe di HP */
+const distance = (a, b) =>
+  Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+
+lb.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    isPinching = true;
+    pinchStartDistance = distance(e.touches[0], e.touches[1]);
+    pinchStartZoom = zoom;
+  } else if (e.touches.length === 1) {
+    touchStartX = e.touches[0].clientX;
+    isPinching = false;
+  }
+}, { passive: true });
+
+lb.addEventListener('touchmove', e => {
+  if (e.touches.length === 2 && pinchStartDistance) {
+    e.preventDefault();
+    const currentDistance = distance(e.touches[0], e.touches[1]);
+    setZoom(pinchStartZoom * (currentDistance / pinchStartDistance));
+  }
+}, { passive: false });
+
+lb.addEventListener('touchend', e => {
+  if (isPinching) {
+    if (e.touches.length === 0) {
+      isPinching = false;
+      pinchStartDistance = 0;
+    }
+    return;
+  }
+
+  if (e.changedTouches.length && e.touches.length === 0 && zoom === 1) {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+
+    if (Math.abs(dx) > 60) {
+      show(idx + (dx < 0 ? 1 : -1));
+    }
+  }
+}, { passive: true });
+
+/* Keyboard */
+document.addEventListener('keydown', e => {
+  if (lb.hidden) return;
+
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') show(idx - 1);
+  if (e.key === 'ArrowRight') show(idx + 1);
+  if (e.key === '+' || e.key === '=') setZoom(zoom + 0.5);
+  if (e.key === '-') setZoom(zoom - 0.5);
+  if (e.key === '0') setZoom(1);
+});
 
   /* Ucapan */
   const KEY = 'aji_dini_wishes_v3', PAGE = 8; let remote = [], shown = PAGE;
