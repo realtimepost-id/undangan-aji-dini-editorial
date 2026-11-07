@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>Admin · Undangan Aji & Dini</title><link rel="stylesheet" href="/admin/admin.css?v=29"></head>
+<body>
+<div id="login" class="box"><h1>Admin Undangan</h1><p>Aji &amp; Dini</p>
+  <input id="pw" class="mask" type="text" placeholder="Password admin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"><label style="font-size:.85rem;text-align:left"><input type="checkbox" id="showpw" style="width:auto"> Tampilkan password</label><small id="cnt">Terketik: 0 karakter</small><button id="loginBtn">Masuk</button><small id="err"></small><small style="color:#aaa">admin v2.8</small></div>
+
+<div id="app" hidden>
+  <header><h1>Dashboard RSVP</h1><div><button id="refresh">⟳ Muat ulang</button><button id="csv">⬇ Export CSV (Excel/Sheets)</button><button id="out">Keluar</button></div></header>
+  <small id="mode"></small>
+  <div class="stats"><div><b id="sTotal">0</b><span>Respon</span></div><div><b id="sYes">0</b><span>Hadir</span></div><div><b id="sPax">0</b><span>Total orang hadir</span></div><div><b id="sNo">0</b><span>Tidak hadir</span></div><div><b id="sMaybe">0</b><span>Masih ragu</span></div></div>
+
+  <section><h2>Daftar RSVP</h2>
+    <div class="bar"><input id="q" placeholder="Cari nama / ucapan..."><select id="f"><option value="">Semua status</option><option>Hadir</option><option>Tidak Hadir</option><option>Masih Ragu</option></select></div>
+    <div class="scroll"><table><thead><tr><th>Waktu</th><th>Nama</th><th>Status</th><th>Jml</th><th>Ucapan</th><th></th></tr></thead><tbody id="rows"></tbody></table></div></section>
+
+  <section><h2>Daftar Tamu &amp; WA Blast</h2>
+    <p>Tempel dari Excel/Google Sheets: satu tamu per baris, kolom <b>Nama</b>, <b>No WA</b>, <b>Kategori</b> (opsional). Kolom dipisah tab (hasil copy dari Excel) atau koma/titik koma.</p>
+    <textarea id="imp" rows="4" placeholder="Budi Santoso&#9;081234567890&#9;Teman Kantor&#10;Siti Aminah&#9;6281355512345&#9;Keluarga"></textarea>
+    <button id="impBtn">+ Tambahkan ke daftar</button>
+    <label>URL undangan <input id="base" placeholder="https://domain-anda.vercel.app/"></label>
+    <label>Template pesan (pakai [nama] dan [link])<textarea id="tpl" rows="7"></textarea></label>
+    <div class="bar"><button id="saveG">💾 Simpan daftar &amp; template</button><button id="next">▶ Kirim berikutnya (belum terkirim)</button><button id="gcsv">⬇ Export tamu CSV</button></div>
+    <small id="gInfo"></small>
+    <div class="bar"><input id="gq" placeholder="Cari tamu..."><select id="gf"><option value="">Semua</option><option value="unsent">Belum dikirim</option><option value="norsvp">Belum RSVP</option></select></div>
+    <div class="scroll"><table><thead><tr><th>Nama</th><th>No WA</th><th>Kategori</th><th>RSVP</th><th>Terkirim</th><th></th></tr></thead><tbody id="glist"></tbody></table></div>
+    <small>Catatan: WhatsApp tidak mengizinkan kirim massal otomatis tanpa API berbayar. Tombol "Kirim WA" membuka chat dengan pesan siap kirim; Anda tinggal menekan Send, lalu tamu otomatis ditandai terkirim.</small>
+  </section>
+</div>
+<script src="/admin/admin.js?v=29"></script></body></html>

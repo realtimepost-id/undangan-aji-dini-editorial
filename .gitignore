@@ -1,0 +1,6 @@
+node_modules
+.env
+data/rsvp.json
+.vercel
+.DS_Store
+data/guests.json
